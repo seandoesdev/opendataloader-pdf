@@ -56,7 +56,7 @@ public class PaperProcessor {
         if (template != null) {
             templateResult = new PaperDocument(
                 new java.io.File(inputPdfName).getName(), totalPages);
-            TemplateBasedExtractor.extract(allZones, template, templateResult);
+            TemplateBasedExtractor.extract(contents, allZones, template, templateResult);
             templateResult.setExtractionMode("template:" + journalId);
             LOGGER.info("Paper mode: template extraction completed (journal=" + journalId + ")");
         }
