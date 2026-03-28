@@ -1,0 +1,106 @@
+{
+  "version": "1.0",
+  "zone_types": {
+    "TITLE": {
+      "threshold": 0.60,
+      "features": {
+        "pageIndex_first": { "condition": "pageIndex == 0", "weight": 0.30 },
+        "position_upper": { "condition": "relativeY < 0.33", "weight": 0.20 },
+        "fontSizeRatio_large": { "condition": "fontSizeRatio > 1.5", "weight": 0.25 },
+        "isBold": { "condition": "bold == true", "weight": 0.10 },
+        "isCentered": { "condition": "centered == true", "weight": 0.10 },
+        "lineCount_short": { "condition": "lineCount <= 4", "weight": 0.05 }
+      }
+    },
+    "AUTHOR_BLOCK": {
+      "threshold": 0.55,
+      "features": {
+        "pageIndex_first": { "condition": "pageIndex == 0", "weight": 0.20 },
+        "prevZone_title": { "condition": "prevZoneType == TITLE", "weight": 0.30 },
+        "hasEmail": { "condition": "hasEmailPattern == true", "weight": 0.15 },
+        "hasSuperscript": { "condition": "hasSuperscript == true", "weight": 0.15 },
+        "fontSizeRatio_normal": { "condition": "fontSizeRatio >= 0.7 && fontSizeRatio <= 1.2", "weight": 0.10 },
+        "isCentered": { "condition": "centered == true", "weight": 0.10 }
+      }
+    },
+    "ABSTRACT": {
+      "threshold": 0.55,
+      "features": {
+        "pageIndex_early": { "condition": "pageIndex <= 1", "weight": 0.15 },
+        "prevZone_context": { "condition": "prevZoneType in [AUTHOR_BLOCK, KEYWORDS]", "weight": 0.25 },
+        "textDensity_high": { "condition": "textDensity > 0.7", "weight": 0.15 },
+        "isItalic_or_indented": { "condition": "italic == true", "weight": 0.10 },
+        "keyword_bonus": { "condition": "textContains [Abstract, ABSTRACT, 초록, 요약, 요 약]", "weight": 0.30 },
+        "lineCount_medium": { "condition": "lineCount >= 3 && lineCount <= 20", "weight": 0.05 }
+      }
+    },
+    "KEYWORDS": {
+      "threshold": 0.55,
+      "features": {
+        "pageIndex_early": { "condition": "pageIndex <= 1", "weight": 0.15 },
+        "prevZone_context": { "condition": "prevZoneType in [ABSTRACT, AUTHOR_BLOCK]", "weight": 0.20 },
+        "keyword_label": { "condition": "textContains [Keywords, Key words, 키워드, 핵심어, 주제어]", "weight": 0.35 },
+        "lineCount_short": { "condition": "lineCount <= 3", "weight": 0.15 },
+        "fontSizeRatio_small": { "condition": "fontSizeRatio < 1.0", "weight": 0.10 }
+      }
+    },
+    "BODY_HEADING": {
+      "threshold": 0.55,
+      "features": {
+        "isHeading": { "condition": "isHeading == true", "weight": 0.40 },
+        "fontSizeRatio_medium": { "condition": "fontSizeRatio >= 1.1 && fontSizeRatio <= 1.5", "weight": 0.20 },
+        "isBold": { "condition": "bold == true", "weight": 0.15 },
+        "lineCount_short": { "condition": "lineCount <= 2", "weight": 0.15 },
+        "not_first_page_top": { "condition": "!(pageIndex == 0 && relativeY < 0.2)", "weight": 0.10 }
+      }
+    },
+    "BODY_TEXT": {
+      "threshold": 0.40,
+      "features": {
+        "fontSizeRatio_normal": { "condition": "fontSizeRatio >= 0.9 && fontSizeRatio <= 1.1", "weight": 0.30 },
+        "textDensity_high": { "condition": "textDensity > 0.5", "weight": 0.25 },
+        "lineCount_multiple": { "condition": "lineCount >= 2", "weight": 0.15 },
+        "not_bold": { "condition": "bold == false", "weight": 0.10 },
+        "not_number_prefix": { "condition": "hasNumberPrefix == false", "weight": 0.10 }
+      }
+    },
+    "REFERENCE_HEADING": {
+      "threshold": 0.60,
+      "features": {
+        "isHeading": { "condition": "isHeading == true", "weight": 0.25 },
+        "keyword_match": { "condition": "textContains [References, REFERENCES, 참고문헌, 참고 문헌, Bibliography]", "weight": 0.45 },
+        "pageIndex_late": { "condition": "pageRatio > 0.6", "weight": 0.15 },
+        "isBold": { "condition": "bold == true", "weight": 0.10 }
+      }
+    },
+    "REFERENCE_BODY": {
+      "threshold": 0.55,
+      "features": {
+        "pageIndex_late": { "condition": "pageRatio > 0.7", "weight": 0.20 },
+        "prevZone_reference": { "condition": "prevZoneType in [REFERENCE_HEADING, REFERENCE_BODY]", "weight": 0.30 },
+        "hasNumberPrefix": { "condition": "hasNumberPrefix == true", "weight": 0.25 },
+        "avgLineLength_short": { "condition": "avgLineLength < avgDocLineLength * 0.8", "weight": 0.10 },
+        "textDensity_medium": { "condition": "textDensity >= 0.3 && textDensity <= 0.7", "weight": 0.10 }
+      }
+    },
+    "PAGE_METADATA": {
+      "threshold": 0.55,
+      "features": {
+        "position_extreme": { "condition": "relativeY < 0.1 || relativeY > 0.9", "weight": 0.30 },
+        "fontSizeRatio_small": { "condition": "fontSizeRatio < 0.8", "weight": 0.20 },
+        "hasDoiPattern": { "condition": "hasDoiPattern == true", "weight": 0.25 },
+        "lineCount_short": { "condition": "lineCount <= 3", "weight": 0.15 },
+        "pageIndex_first": { "condition": "pageIndex == 0", "weight": 0.10 }
+      }
+    },
+    "ACKNOWLEDGMENT": {
+      "threshold": 0.60,
+      "features": {
+        "keyword_match": { "condition": "textContains [Acknowledgment, Acknowledgement, 감사의 글, 사사]", "weight": 0.45 },
+        "pageIndex_late": { "condition": "pageRatio > 0.7", "weight": 0.20 },
+        "prevZone_body": { "condition": "prevZoneType in [BODY_TEXT, BODY_HEADING]", "weight": 0.15 },
+        "lineCount_short": { "condition": "lineCount <= 10", "weight": 0.10 }
+      }
+    }
+  }
+}
