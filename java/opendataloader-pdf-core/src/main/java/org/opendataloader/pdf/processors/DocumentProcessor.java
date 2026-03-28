@@ -16,6 +16,7 @@
 package org.opendataloader.pdf.processors;
 
 import org.opendataloader.pdf.containers.StaticLayoutContainers;
+import org.opendataloader.pdf.processors.paper.PaperProcessor;
 import org.opendataloader.pdf.processors.readingorder.XYCutPlusPlusSorter;
 import org.opendataloader.pdf.json.JsonWriter;
 import org.opendataloader.pdf.markdown.MarkdownGenerator;
@@ -94,6 +95,9 @@ public class DocumentProcessor {
             config.getFilterConfig().isFilterSensitiveData());
         contentSanitizer.sanitizeContents(contents);
         generateOutputs(inputPdfName, contents, config);
+        if (config.isPaperMode()) {
+            PaperProcessor.process(inputPdfName, contents, config);
+        }
     }
 
     /**
