@@ -1,28 +1,29 @@
 {
   "journal_id": "cacd",
   "name": "Communication Sciences & Disorders",
+  "auto_generated": true,
   "title_rules": {
-    "skip_labels": ["Original Article", "Review Article", "Brief Report", "Case Report"],
+    "skip_labels": ["Original Article"],
     "strategy": "largest_font_excluding_skips",
     "page": 0,
     "position": "upper_half"
   },
   "author_rules": {
-    "exclude_patterns": ["Received:", "Revised:", "Accepted:", "Published:"],
-    "stop_before_patterns": ["^Department", "^School", "^College"],
+    "exclude_patterns": ["Received:", "Revised:", "Accepted:"],
+    "stop_before_patterns": [],
     "separator": ",",
     "affiliation_marker": "superscript"
   },
   "abstract_rules": {
-    "labels": ["Purpose", "Abstract", "Background", "Objectives"],
-    "end_labels": ["Keywords", "Key words", "KEYWORDS"]
+    "labels": ["Purpose", "Abstract", "초록", "요약", "국문초록"],
+    "end_labels": ["Keywords", "Key words", "키워드", "핵심어", "주요어"]
   },
   "keyword_rules": {
-    "labels": ["Keywords", "Key words"],
-    "separators": [",", ";"]
+    "labels": ["Keywords", "Key words", "키워드", "핵심어", "주요어"],
+    "separators": [",", ";", "·"]
   },
   "reference_rules": {
-    "heading_patterns": ["References", "REFERENCES"],
+    "heading_patterns": ["REFERENCES", "References", "참고문헌"],
     "entry_pattern": "bracket_number"
   }
 }

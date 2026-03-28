@@ -1,25 +1,25 @@
 {
-  "journal_id": "ksepe",
-  "name": "한국초등체육학회지",
+  "journal_id": "sportslaw",
+  "name": "스포츠엔터테인먼트와 법",
   "auto_generated": true,
   "title_rules": {
-    "skip_labels": ["1)"],
+    "skip_labels": [],
     "strategy": "largest_font_excluding_skips",
     "page": 0,
     "position": "upper_half"
   },
   "author_rules": {
-    "exclude_patterns": ["Received:", "Revised:", "Accepted:", "Published:"],
+    "exclude_patterns": ["심사:", "투고:", "게재:"],
     "stop_before_patterns": [],
     "separator": ",",
     "affiliation_marker": "superscript"
   },
   "abstract_rules": {
-    "labels": ["국문초록", "Abstract", "초록", "요약"],
-    "end_labels": ["주요어", "Keywords", "Key words", "키워드", "핵심어"]
+    "labels": ["Abstract", "국문 초록", "초록", "요약"],
+    "end_labels": ["주제어", "Keywords", "Key words", "키워드", "핵심어", "주요어"]
   },
   "keyword_rules": {
-    "labels": ["주요어", "Keywords", "Key words", "키워드", "핵심어"],
+    "labels": ["주제어", "Keywords", "Key words", "키워드", "핵심어", "주요어"],
     "separators": [",", ";", "·"]
   },
   "reference_rules": {

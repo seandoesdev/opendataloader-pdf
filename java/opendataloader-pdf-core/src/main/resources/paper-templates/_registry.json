@@ -3,7 +3,7 @@
     {
       "journal_id": "cacd",
       "doi_prefixes": ["10.21849/cacd"],
-      "issn": ["2586-7792"],
+      "issn": ["2586-7792", "2508-5948"],
       "name_patterns": ["Commun Sci & Disord", "Communication Sciences & Disorders"]
     },
     {
@@ -11,6 +11,12 @@
       "doi_prefixes": ["10.26844/ksepe"],
       "issn": [],
       "name_patterns": ["한국초등체육학회지", "Korean Journal of Elementary Physical Education"]
+    },
+    {
+      "journal_id": "sportslaw",
+      "doi_prefixes": [],
+      "issn": [],
+      "name_patterns": ["스포츠엔터테인먼트와 법", "Sports Entertainment and Law"]
     }
   ]
 }
