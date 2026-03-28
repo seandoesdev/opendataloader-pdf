@@ -40,6 +40,7 @@ def convert(
     paper_weights: Optional[str] = None,
     paper_template_dir: Optional[str] = None,
     paper_review_dir: Optional[str] = None,
+    paper_crf_model: Optional[str] = None,
     to_stdout: bool = False,
 ) -> None:
     """
@@ -76,6 +77,7 @@ def convert(
         paper_weights: Path to custom zone classification weights JSON file for paper mode
         paper_template_dir: Path to custom journal template directory for paper mode
         paper_review_dir: Path to review queue output directory for low-confidence paper mode results
+        paper_crf_model: Path to trained CRF model file for paper mode zone classification
         to_stdout: Write output to stdout instead of file (single format only)
     """
     args: List[str] = []
@@ -152,6 +154,8 @@ def convert(
         args.extend(["--paper-template-dir", paper_template_dir])
     if paper_review_dir:
         args.extend(["--paper-review-dir", paper_review_dir])
+    if paper_crf_model:
+        args.extend(["--paper-crf-model", paper_crf_model])
     if to_stdout:
         args.append("--to-stdout")
 

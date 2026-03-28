@@ -271,6 +271,15 @@ CLI_OPTIONS: List[Dict[str, Any]] = [
         "description": "Path to review queue output directory for low-confidence paper mode results",
     },
     {
+        "name": "paper-crf-model",
+        "python_name": "paper_crf_model",
+        "short_name": None,
+        "type": "string",
+        "required": False,
+        "default": None,
+        "description": "Path to trained CRF model file for paper mode zone classification",
+    },
+    {
         "name": "to-stdout",
         "python_name": "to_stdout",
         "short_name": None,

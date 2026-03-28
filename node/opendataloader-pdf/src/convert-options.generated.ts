@@ -63,6 +63,8 @@ export interface ConvertOptions {
   paperTemplateDir?: string;
   /** Path to review queue output directory for low-confidence paper mode results */
   paperReviewDir?: string;
+  /** Path to trained CRF model file for paper mode zone classification */
+  paperCrfModel?: string;
   /** Write output to stdout instead of file (single format only) */
   toStdout?: boolean;
 }
@@ -100,6 +102,7 @@ export interface CliOptions {
   paperWeights?: string;
   paperTemplateDir?: string;
   paperReviewDir?: string;
+  paperCrfModel?: string;
   toStdout?: boolean;
 }
 
@@ -195,6 +198,9 @@ export function buildConvertOptions(cliOptions: CliOptions): ConvertOptions {
   }
   if (cliOptions.paperReviewDir) {
     convertOptions.paperReviewDir = cliOptions.paperReviewDir;
+  }
+  if (cliOptions.paperCrfModel) {
+    convertOptions.paperCrfModel = cliOptions.paperCrfModel;
   }
   if (cliOptions.toStdout) {
     convertOptions.toStdout = true;
@@ -307,6 +313,9 @@ export function buildArgs(options: ConvertOptions): string[] {
   }
   if (options.paperReviewDir) {
     args.push('--paper-review-dir', options.paperReviewDir);
+  }
+  if (options.paperCrfModel) {
+    args.push('--paper-crf-model', options.paperCrfModel);
   }
   if (options.toStdout) {
     args.push('--to-stdout');

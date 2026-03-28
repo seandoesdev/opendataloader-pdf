@@ -233,6 +233,14 @@
       "description": "Path to review queue output directory for low-confidence paper mode results"
     },
     {
+      "name": "paper-crf-model",
+      "shortName": null,
+      "type": "string",
+      "required": false,
+      "default": null,
+      "description": "Path to trained CRF model file for paper mode zone classification"
+    },
+    {
       "name": "to-stdout",
       "shortName": null,
       "type": "boolean",

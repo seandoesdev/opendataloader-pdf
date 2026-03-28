@@ -36,5 +36,6 @@ export function registerCliOptions(program: Command): void {
   program.option('--paper-weights <value>', 'Path to custom zone classification weights JSON file for paper mode');
   program.option('--paper-template-dir <value>', 'Path to custom journal template directory for paper mode');
   program.option('--paper-review-dir <value>', 'Path to review queue output directory for low-confidence paper mode results');
+  program.option('--paper-crf-model <value>', 'Path to trained CRF model file for paper mode zone classification');
   program.option('--to-stdout', 'Write output to stdout instead of file (single format only)');
 }
