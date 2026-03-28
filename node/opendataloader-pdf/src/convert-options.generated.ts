@@ -59,6 +59,10 @@ export interface ConvertOptions {
   paperMode?: boolean;
   /** Path to custom zone classification weights JSON file for paper mode */
   paperWeights?: string;
+  /** Path to custom journal template directory for paper mode */
+  paperTemplateDir?: string;
+  /** Path to review queue output directory for low-confidence paper mode results */
+  paperReviewDir?: string;
   /** Write output to stdout instead of file (single format only) */
   toStdout?: boolean;
 }
@@ -94,6 +98,8 @@ export interface CliOptions {
   hybridFallback?: boolean;
   paperMode?: boolean;
   paperWeights?: string;
+  paperTemplateDir?: string;
+  paperReviewDir?: string;
   toStdout?: boolean;
 }
 
@@ -183,6 +189,12 @@ export function buildConvertOptions(cliOptions: CliOptions): ConvertOptions {
   }
   if (cliOptions.paperWeights) {
     convertOptions.paperWeights = cliOptions.paperWeights;
+  }
+  if (cliOptions.paperTemplateDir) {
+    convertOptions.paperTemplateDir = cliOptions.paperTemplateDir;
+  }
+  if (cliOptions.paperReviewDir) {
+    convertOptions.paperReviewDir = cliOptions.paperReviewDir;
   }
   if (cliOptions.toStdout) {
     convertOptions.toStdout = true;
@@ -289,6 +301,12 @@ export function buildArgs(options: ConvertOptions): string[] {
   }
   if (options.paperWeights) {
     args.push('--paper-weights', options.paperWeights);
+  }
+  if (options.paperTemplateDir) {
+    args.push('--paper-template-dir', options.paperTemplateDir);
+  }
+  if (options.paperReviewDir) {
+    args.push('--paper-review-dir', options.paperReviewDir);
   }
   if (options.toStdout) {
     args.push('--to-stdout');

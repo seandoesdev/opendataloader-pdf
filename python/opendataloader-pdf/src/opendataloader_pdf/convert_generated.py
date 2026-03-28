@@ -38,6 +38,8 @@ def convert(
     hybrid_fallback: bool = False,
     paper_mode: bool = False,
     paper_weights: Optional[str] = None,
+    paper_template_dir: Optional[str] = None,
+    paper_review_dir: Optional[str] = None,
     to_stdout: bool = False,
 ) -> None:
     """
@@ -72,6 +74,8 @@ def convert(
         hybrid_fallback: Opt in to Java fallback on hybrid backend error (default: disabled)
         paper_mode: Enable academic paper mode for structured metadata extraction (title, authors, abstract, references)
         paper_weights: Path to custom zone classification weights JSON file for paper mode
+        paper_template_dir: Path to custom journal template directory for paper mode
+        paper_review_dir: Path to review queue output directory for low-confidence paper mode results
         to_stdout: Write output to stdout instead of file (single format only)
     """
     args: List[str] = []
@@ -144,6 +148,10 @@ def convert(
         args.append("--paper-mode")
     if paper_weights:
         args.extend(["--paper-weights", paper_weights])
+    if paper_template_dir:
+        args.extend(["--paper-template-dir", paper_template_dir])
+    if paper_review_dir:
+        args.extend(["--paper-review-dir", paper_review_dir])
     if to_stdout:
         args.append("--to-stdout")
 

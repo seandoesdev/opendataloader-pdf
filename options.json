@@ -217,6 +217,22 @@
       "description": "Path to custom zone classification weights JSON file for paper mode"
     },
     {
+      "name": "paper-template-dir",
+      "shortName": null,
+      "type": "string",
+      "required": false,
+      "default": null,
+      "description": "Path to custom journal template directory for paper mode"
+    },
+    {
+      "name": "paper-review-dir",
+      "shortName": null,
+      "type": "string",
+      "required": false,
+      "default": null,
+      "description": "Path to review queue output directory for low-confidence paper mode results"
+    },
+    {
       "name": "to-stdout",
       "shortName": null,
       "type": "boolean",

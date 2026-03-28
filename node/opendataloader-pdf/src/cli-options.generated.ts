@@ -34,5 +34,7 @@ export function registerCliOptions(program: Command): void {
   program.option('--hybrid-fallback', 'Opt in to Java fallback on hybrid backend error (default: disabled)');
   program.option('--paper-mode', 'Enable academic paper mode for structured metadata extraction (title, authors, abstract, references)');
   program.option('--paper-weights <value>', 'Path to custom zone classification weights JSON file for paper mode');
+  program.option('--paper-template-dir <value>', 'Path to custom journal template directory for paper mode');
+  program.option('--paper-review-dir <value>', 'Path to review queue output directory for low-confidence paper mode results');
   program.option('--to-stdout', 'Write output to stdout instead of file (single format only)');
 }
