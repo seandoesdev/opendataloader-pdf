@@ -32,5 +32,7 @@ export function registerCliOptions(program: Command): void {
   program.option('--hybrid-url <value>', 'Hybrid backend server URL (overrides default)');
   program.option('--hybrid-timeout <value>', 'Hybrid backend request timeout in milliseconds (0 = no timeout). Default: 0');
   program.option('--hybrid-fallback', 'Opt in to Java fallback on hybrid backend error (default: disabled)');
+  program.option('--paper-mode', 'Enable academic paper mode for structured metadata extraction (title, authors, abstract, references)');
+  program.option('--paper-weights <value>', 'Path to custom zone classification weights JSON file for paper mode');
   program.option('--to-stdout', 'Write output to stdout instead of file (single format only)');
 }

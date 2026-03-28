@@ -55,6 +55,10 @@ export interface ConvertOptions {
   hybridTimeout?: string;
   /** Opt in to Java fallback on hybrid backend error (default: disabled) */
   hybridFallback?: boolean;
+  /** Enable academic paper mode for structured metadata extraction (title, authors, abstract, references) */
+  paperMode?: boolean;
+  /** Path to custom zone classification weights JSON file for paper mode */
+  paperWeights?: string;
   /** Write output to stdout instead of file (single format only) */
   toStdout?: boolean;
 }
@@ -88,6 +92,8 @@ export interface CliOptions {
   hybridUrl?: string;
   hybridTimeout?: string;
   hybridFallback?: boolean;
+  paperMode?: boolean;
+  paperWeights?: string;
   toStdout?: boolean;
 }
 
@@ -171,6 +177,12 @@ export function buildConvertOptions(cliOptions: CliOptions): ConvertOptions {
   }
   if (cliOptions.hybridFallback) {
     convertOptions.hybridFallback = true;
+  }
+  if (cliOptions.paperMode) {
+    convertOptions.paperMode = true;
+  }
+  if (cliOptions.paperWeights) {
+    convertOptions.paperWeights = cliOptions.paperWeights;
   }
   if (cliOptions.toStdout) {
     convertOptions.toStdout = true;
@@ -271,6 +283,12 @@ export function buildArgs(options: ConvertOptions): string[] {
   }
   if (options.hybridFallback) {
     args.push('--hybrid-fallback');
+  }
+  if (options.paperMode) {
+    args.push('--paper-mode');
+  }
+  if (options.paperWeights) {
+    args.push('--paper-weights', options.paperWeights);
   }
   if (options.toStdout) {
     args.push('--to-stdout');

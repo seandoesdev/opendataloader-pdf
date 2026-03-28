@@ -201,6 +201,22 @@
       "description": "Opt in to Java fallback on hybrid backend error (default: disabled)"
     },
     {
+      "name": "paper-mode",
+      "shortName": null,
+      "type": "boolean",
+      "required": false,
+      "default": false,
+      "description": "Enable academic paper mode for structured metadata extraction (title, authors, abstract, references)"
+    },
+    {
+      "name": "paper-weights",
+      "shortName": null,
+      "type": "string",
+      "required": false,
+      "default": null,
+      "description": "Path to custom zone classification weights JSON file for paper mode"
+    },
+    {
       "name": "to-stdout",
       "shortName": null,
       "type": "boolean",
