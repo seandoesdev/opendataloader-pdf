@@ -141,6 +141,10 @@ public class CLIOptions {
     private static final String PAPER_MODE_DESC = "Enable academic paper mode for structured metadata extraction (title, authors, abstract, references)";
     private static final String PAPER_WEIGHTS_LONG_OPTION = "paper-weights";
     private static final String PAPER_WEIGHTS_DESC = "Path to custom zone classification weights JSON file for paper mode";
+    private static final String PAPER_TEMPLATE_DIR_LONG_OPTION = "paper-template-dir";
+    private static final String PAPER_TEMPLATE_DIR_DESC = "Path to custom journal template directory for paper mode";
+    private static final String PAPER_REVIEW_DIR_LONG_OPTION = "paper-review-dir";
+    private static final String PAPER_REVIEW_DIR_DESC = "Path to review queue output directory for low-confidence paper mode results";
 
     // ===== Stdout Output =====
     private static final String TO_STDOUT_LONG_OPTION = "to-stdout";
@@ -195,6 +199,8 @@ public class CLIOptions {
             new OptionDefinition(HYBRID_FALLBACK_LONG_OPTION, null, "boolean", false, HYBRID_FALLBACK_DESC, true),
             new OptionDefinition(PAPER_MODE_LONG_OPTION, null, "boolean", false, PAPER_MODE_DESC, true),
             new OptionDefinition(PAPER_WEIGHTS_LONG_OPTION, null, "string", null, PAPER_WEIGHTS_DESC, true),
+            new OptionDefinition(PAPER_TEMPLATE_DIR_LONG_OPTION, null, "string", null, PAPER_TEMPLATE_DIR_DESC, true),
+            new OptionDefinition(PAPER_REVIEW_DIR_LONG_OPTION, null, "string", null, PAPER_REVIEW_DIR_DESC, true),
             new OptionDefinition(TO_STDOUT_LONG_OPTION, null, "boolean", false, TO_STDOUT_DESC, true),
             new OptionDefinition(EXPORT_OPTIONS_LONG_OPTION, null, "boolean", null, null, false),
 
@@ -259,6 +265,12 @@ public class CLIOptions {
         }
         if (commandLine.hasOption(PAPER_WEIGHTS_LONG_OPTION)) {
             config.setPaperWeightsPath(commandLine.getOptionValue(PAPER_WEIGHTS_LONG_OPTION));
+        }
+        if (commandLine.hasOption(PAPER_TEMPLATE_DIR_LONG_OPTION)) {
+            config.setPaperTemplateDir(commandLine.getOptionValue(PAPER_TEMPLATE_DIR_LONG_OPTION));
+        }
+        if (commandLine.hasOption(PAPER_REVIEW_DIR_LONG_OPTION)) {
+            config.setPaperReviewDir(commandLine.getOptionValue(PAPER_REVIEW_DIR_LONG_OPTION));
         }
         if (commandLine.hasOption(CLIOptions.READING_ORDER_LONG_OPTION)) {
             config.setReadingOrder(commandLine.getOptionValue(CLIOptions.READING_ORDER_LONG_OPTION));

@@ -1,5 +1,6 @@
 package org.opendataloader.pdf.processors.paper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.opendataloader.pdf.api.Config;
 import org.opendataloader.pdf.paper.*;
 import org.opendataloader.pdf.paper.output.PaperJsonWriter;
@@ -22,55 +23,100 @@ public class PaperProcessor {
         int totalPages = contents.size();
         double avgBodyFontSize = computeAvgBodyFontSize(contents);
 
-        // Load classifier
-        ZoneClassifier classifier;
-        if (config.getPaperWeightsPath() != null) {
-            classifier = ZoneClassifier.fromFile(config.getPaperWeightsPath());
-        } else {
-            classifier = ZoneClassifier.withDefaultWeights();
-        }
-
-        // Step 1: Detect zones from all pages
+        // Detect zones (shared by all layers)
         List<Zone> allZones = new ArrayList<>();
         for (int i = 0; i < contents.size(); i++) {
-            List<Zone> pageZones = ZoneDetector.detect(contents.get(i), i, totalPages, avgBodyFontSize);
-            allZones.addAll(pageZones);
+            allZones.addAll(ZoneDetector.detect(contents.get(i), i, totalPages, avgBodyFontSize));
         }
-        LOGGER.info("Paper mode: detected " + allZones.size() + " zones across " + totalPages + " pages");
+        LOGGER.info("Paper mode: detected " + allZones.size() + " zones");
 
-        // Step 2: Classify zones
+        // Classify zones with rule engine (Layer 3 — always runs as baseline)
+        ZoneClassifier classifier = config.getPaperWeightsPath() != null
+            ? ZoneClassifier.fromFile(config.getPaperWeightsPath())
+            : ZoneClassifier.withDefaultWeights();
         classifier.classify(allZones);
 
-        // Step 3: Extract structured data
-        PaperDocument doc = new PaperDocument(
-            new java.io.File(inputPdfName).getName(), totalPages);
+        // === Layer 3: Rule-based extraction (always runs) ===
+        PaperDocument ruleResult = extractWithRules(allZones, inputPdfName, totalPages);
 
-        TitleExtractor.extract(allZones, doc);
-        AuthorExtractor.extract(allZones, doc);
-        AbstractExtractor.extract(allZones, doc);
-        MetadataExtractor.extract(allZones, doc);
-        SectionClassifier.classify(allZones, doc);
-        ReferenceParser.parse(allZones, doc);
-        CitationLinker.link(allZones, doc);
+        // === Layer 1: Template-based extraction ===
+        PaperDocument templateResult = null;
+        TemplateRegistry registry = config.getPaperTemplateDir() != null
+            ? TemplateRegistry.loadFromDir(config.getPaperTemplateDir())
+            : TemplateRegistry.loadDefault();
 
-        // Step 4: Generate outputs
+        String firstPageText = getFirstPageText(allZones);
+        String journalId = JournalFingerprinter.identify(firstPageText, registry);
+        LOGGER.info("Paper mode: journal identified as '" + journalId + "'");
+
+        JsonNode template = registry.findTemplate(JournalFingerprinter.extractDoi(firstPageText));
+        if (template == null) {
+            template = registry.findTemplateByText(firstPageText);
+        }
+        if (template != null) {
+            templateResult = new PaperDocument(
+                new java.io.File(inputPdfName).getName(), totalPages);
+            TemplateBasedExtractor.extract(allZones, template, templateResult);
+            templateResult.setExtractionMode("template:" + journalId);
+            LOGGER.info("Paper mode: template extraction completed (journal=" + journalId + ")");
+        }
+
+        // === Layer 2: CRF (placeholder for Sub-project 2) ===
+        PaperDocument crfResult = null;
+
+        // === Merge results ===
+        PaperDocument finalDoc = ResultMerger.merge(templateResult, crfResult, ruleResult);
+        finalDoc.setExtractionMode(templateResult != null
+            ? "template:" + journalId + "+rules" : "rules");
+
+        // Diagnostic logging
+        PaperZoneLogger.log(allZones, finalDoc);
+
+        // Generate outputs
         String outputFolder = config.getOutputFolder();
         if (outputFolder == null) {
             outputFolder = new java.io.File(inputPdfName).getParent();
             if (outputFolder == null) outputFolder = ".";
         }
-        PaperJsonWriter.write(doc, inputPdfName, outputFolder);
-        PaperMarkdownGenerator.write(doc, inputPdfName, outputFolder);
+        PaperJsonWriter.write(finalDoc, inputPdfName, outputFolder);
+        PaperMarkdownGenerator.write(finalDoc, inputPdfName, outputFolder);
+
+        // Write to review queue if low confidence
+        ReviewQueueWriter.write(finalDoc, inputPdfName, config.getPaperReviewDir());
 
         LOGGER.info("Paper mode: completed " + inputPdfName +
-            " (title=" + (doc.getTitle() != null ? "yes" : "no") +
-            ", authors=" + doc.getAuthors().size() +
-            ", refs=" + doc.getReferences().size() + ")");
+            " (title=" + (finalDoc.getTitle() != null ? "yes" : "no") +
+            ", authors=" + finalDoc.getAuthors().size() +
+            ", refs=" + finalDoc.getReferences().size() +
+            ", mode=" + finalDoc.getExtractionMode() + ")");
+    }
+
+    private static PaperDocument extractWithRules(List<Zone> zones, String inputPdfName, int totalPages) {
+        PaperDocument doc = new PaperDocument(
+            new java.io.File(inputPdfName).getName(), totalPages);
+        TitleExtractor.extract(zones, doc);
+        AuthorExtractor.extract(zones, doc);
+        AbstractExtractor.extract(zones, doc);
+        MetadataExtractor.extract(zones, doc);
+        SectionClassifier.classify(zones, doc);
+        ReferenceParser.parse(zones, doc);
+        CitationLinker.link(zones, doc);
+        doc.setExtractionMode("rules");
+        return doc;
+    }
+
+    private static String getFirstPageText(List<Zone> zones) {
+        StringBuilder sb = new StringBuilder();
+        for (Zone zone : zones) {
+            if (zone.getPageNumber() <= 1) {
+                sb.append(zone.getTextContent()).append("\n");
+            }
+        }
+        return sb.toString();
     }
 
     private static double computeAvgBodyFontSize(List<List<IObject>> contents) {
-        double sum = 0;
-        int count = 0;
+        double sum = 0; int count = 0;
         for (List<IObject> page : contents) {
             for (IObject obj : page) {
                 if (obj instanceof SemanticTextNode) {

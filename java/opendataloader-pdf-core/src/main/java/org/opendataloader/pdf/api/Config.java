@@ -85,6 +85,8 @@ public class Config {
     private boolean detectStrikethrough = false;
     private boolean paperMode;
     private String paperWeightsPath;
+    private String paperTemplateDir;
+    private String paperReviewDir;
 
     /** Table detection method: default (border-based detection). */
     public static final String TABLE_METHOD_DEFAULT = "default";
@@ -861,6 +863,10 @@ public class Config {
     public void setPaperMode(boolean paperMode) { this.paperMode = paperMode; }
     public String getPaperWeightsPath() { return paperWeightsPath; }
     public void setPaperWeightsPath(String paperWeightsPath) { this.paperWeightsPath = paperWeightsPath; }
+    public String getPaperTemplateDir() { return paperTemplateDir; }
+    public void setPaperTemplateDir(String paperTemplateDir) { this.paperTemplateDir = paperTemplateDir; }
+    public String getPaperReviewDir() { return paperReviewDir; }
+    public void setPaperReviewDir(String paperReviewDir) { this.paperReviewDir = paperReviewDir; }
 
     private boolean outputStdout = false;
 
