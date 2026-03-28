@@ -136,6 +136,12 @@ public class CLIOptions {
     private static final String HYBRID_FALLBACK_LONG_OPTION = "hybrid-fallback";
     private static final String HYBRID_FALLBACK_DESC = "Opt in to Java fallback on hybrid backend error (default: disabled)";
 
+    // ===== Paper Mode =====
+    private static final String PAPER_MODE_LONG_OPTION = "paper-mode";
+    private static final String PAPER_MODE_DESC = "Enable academic paper mode for structured metadata extraction (title, authors, abstract, references)";
+    private static final String PAPER_WEIGHTS_LONG_OPTION = "paper-weights";
+    private static final String PAPER_WEIGHTS_DESC = "Path to custom zone classification weights JSON file for paper mode";
+
     // ===== Stdout Output =====
     private static final String TO_STDOUT_LONG_OPTION = "to-stdout";
     private static final String TO_STDOUT_DESC = "Write output to stdout instead of file (single format only)";
@@ -187,6 +193,8 @@ public class CLIOptions {
             new OptionDefinition(HYBRID_URL_LONG_OPTION, null, "string", null, HYBRID_URL_DESC, true),
             new OptionDefinition(HYBRID_TIMEOUT_LONG_OPTION, null, "string", "0", HYBRID_TIMEOUT_DESC, true),
             new OptionDefinition(HYBRID_FALLBACK_LONG_OPTION, null, "boolean", false, HYBRID_FALLBACK_DESC, true),
+            new OptionDefinition(PAPER_MODE_LONG_OPTION, null, "boolean", false, PAPER_MODE_DESC, true),
+            new OptionDefinition(PAPER_WEIGHTS_LONG_OPTION, null, "string", null, PAPER_WEIGHTS_DESC, true),
             new OptionDefinition(TO_STDOUT_LONG_OPTION, null, "boolean", false, TO_STDOUT_DESC, true),
             new OptionDefinition(EXPORT_OPTIONS_LONG_OPTION, null, "boolean", null, null, false),
 
@@ -245,6 +253,12 @@ public class CLIOptions {
         }
         if (commandLine.hasOption(DETECT_STRIKETHROUGH_LONG_OPTION)) {
             config.setDetectStrikethrough(true);
+        }
+        if (commandLine.hasOption(PAPER_MODE_LONG_OPTION)) {
+            config.setPaperMode(true);
+        }
+        if (commandLine.hasOption(PAPER_WEIGHTS_LONG_OPTION)) {
+            config.setPaperWeightsPath(commandLine.getOptionValue(PAPER_WEIGHTS_LONG_OPTION));
         }
         if (commandLine.hasOption(CLIOptions.READING_ORDER_LONG_OPTION)) {
             config.setReadingOrder(commandLine.getOptionValue(CLIOptions.READING_ORDER_LONG_OPTION));

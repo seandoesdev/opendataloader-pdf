@@ -83,6 +83,8 @@ public class Config {
     private final HybridConfig hybridConfig = new HybridConfig();
     private boolean includeHeaderFooter = false;
     private boolean detectStrikethrough = false;
+    private boolean paperMode;
+    private String paperWeightsPath;
 
     /** Table detection method: default (border-based detection). */
     public static final String TABLE_METHOD_DEFAULT = "default";
@@ -854,6 +856,11 @@ public class Config {
     public void setDetectStrikethrough(boolean detectStrikethrough) {
         this.detectStrikethrough = detectStrikethrough;
     }
+
+    public boolean isPaperMode() { return paperMode; }
+    public void setPaperMode(boolean paperMode) { this.paperMode = paperMode; }
+    public String getPaperWeightsPath() { return paperWeightsPath; }
+    public void setPaperWeightsPath(String paperWeightsPath) { this.paperWeightsPath = paperWeightsPath; }
 
     private boolean outputStdout = false;
 
