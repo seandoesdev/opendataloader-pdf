@@ -1,0 +1,28 @@
+{
+  "journal_id": "ksepe",
+  "name": "한국초등체육학회지",
+  "title_rules": {
+    "skip_labels": [],
+    "strategy": "largest_font_in_body",
+    "page": 0,
+    "position": "upper_half"
+  },
+  "author_rules": {
+    "exclude_patterns": ["국문초록", "Abstract"],
+    "stop_before_patterns": ["국문초록", "Abstract", "^\\d+\\)"],
+    "separator": ",",
+    "affiliation_marker": "parentheses"
+  },
+  "abstract_rules": {
+    "labels": ["국문초록", "초록", "Abstract"],
+    "end_labels": ["주요어", "핵심어", "키워드", "Keywords"]
+  },
+  "keyword_rules": {
+    "labels": ["주요어", "핵심어", "키워드", "Keywords"],
+    "separators": [",", ";", "·"]
+  },
+  "reference_rules": {
+    "heading_patterns": ["참고문헌", "참고 문헌", "References"],
+    "entry_pattern": "dot_number"
+  }
+}

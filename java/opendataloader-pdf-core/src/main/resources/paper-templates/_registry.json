@@ -1,0 +1,16 @@
+{
+  "journals": [
+    {
+      "journal_id": "cacd",
+      "doi_prefixes": ["10.21849/cacd"],
+      "issn": ["2586-7792"],
+      "name_patterns": ["Commun Sci & Disord", "Communication Sciences & Disorders"]
+    },
+    {
+      "journal_id": "ksepe",
+      "doi_prefixes": ["10.26844/ksepe"],
+      "issn": [],
+      "name_patterns": ["한국초등체육학회지", "Korean Journal of Elementary Physical Education"]
+    }
+  ]
+}

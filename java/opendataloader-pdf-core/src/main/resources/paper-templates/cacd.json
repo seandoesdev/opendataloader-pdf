@@ -1,0 +1,28 @@
+{
+  "journal_id": "cacd",
+  "name": "Communication Sciences & Disorders",
+  "title_rules": {
+    "skip_labels": ["Original Article", "Review Article", "Brief Report", "Case Report"],
+    "strategy": "largest_font_excluding_skips",
+    "page": 0,
+    "position": "upper_half"
+  },
+  "author_rules": {
+    "exclude_patterns": ["Received:", "Revised:", "Accepted:", "Published:"],
+    "stop_before_patterns": ["^Department", "^School", "^College"],
+    "separator": ",",
+    "affiliation_marker": "superscript"
+  },
+  "abstract_rules": {
+    "labels": ["Purpose", "Abstract", "Background", "Objectives"],
+    "end_labels": ["Keywords", "Key words", "KEYWORDS"]
+  },
+  "keyword_rules": {
+    "labels": ["Keywords", "Key words"],
+    "separators": [",", ";"]
+  },
+  "reference_rules": {
+    "heading_patterns": ["References", "REFERENCES"],
+    "entry_pattern": "bracket_number"
+  }
+}
