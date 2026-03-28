@@ -11,6 +11,7 @@ public class TitleExtractor {
             if (zone.getType() == ZoneType.TITLE) {
                 String text = zone.getTextContent().trim();
                 if (text.isEmpty()) continue;
+                if (!PaperValidator.isValidTitle(text)) continue;  // Skip category labels
 
                 boolean hasKorean = text.codePoints().anyMatch(cp ->
                     (cp >= 0xAC00 && cp <= 0xD7AF) || (cp >= 0x3131 && cp <= 0x318E));

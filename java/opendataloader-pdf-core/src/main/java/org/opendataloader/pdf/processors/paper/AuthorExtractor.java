@@ -94,6 +94,7 @@ public class AuthorExtractor {
                 // Clean name of markers
                 name = SUPERSCRIPT_MARKER.matcher(name).replaceAll("").trim();
                 if (name.isEmpty()) continue;
+                if (!PaperValidator.isValidAuthor(name)) continue;  // Skip dates, numbers
 
                 // Look up affiliation
                 String affiliation = null;
