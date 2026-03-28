@@ -88,6 +88,7 @@ public class Config {
     private String paperTemplateDir;
     private String paperReviewDir;
     private String paperCrfModelPath;
+    private boolean paperAnalyze;
 
     /** Table detection method: default (border-based detection). */
     public static final String TABLE_METHOD_DEFAULT = "default";
@@ -870,6 +871,8 @@ public class Config {
     public void setPaperReviewDir(String paperReviewDir) { this.paperReviewDir = paperReviewDir; }
     public String getPaperCrfModelPath() { return paperCrfModelPath; }
     public void setPaperCrfModelPath(String path) { this.paperCrfModelPath = path; }
+    public boolean isPaperAnalyze() { return paperAnalyze; }
+    public void setPaperAnalyze(boolean paperAnalyze) { this.paperAnalyze = paperAnalyze; }
 
     private boolean outputStdout = false;
 

@@ -16,6 +16,7 @@
 package org.opendataloader.pdf.processors;
 
 import org.opendataloader.pdf.containers.StaticLayoutContainers;
+import org.opendataloader.pdf.processors.paper.PaperAnalyzer;
 import org.opendataloader.pdf.processors.paper.PaperProcessor;
 import org.opendataloader.pdf.processors.readingorder.XYCutPlusPlusSorter;
 import org.opendataloader.pdf.json.JsonWriter;
@@ -94,6 +95,11 @@ public class DocumentProcessor {
         ContentSanitizer contentSanitizer = new ContentSanitizer(config.getFilterConfig().getFilterRules(),
             config.getFilterConfig().isFilterSensitiveData());
         contentSanitizer.sanitizeContents(contents);
+        if (config.isPaperAnalyze()) {
+            String analyzeOutputDir = config.getPaperTemplateDir() != null ? config.getPaperTemplateDir() : config.getOutputFolder();
+            PaperAnalyzer.analyze(inputPdfName, contents, analyzeOutputDir);
+            return; // Don't do normal processing when analyzing
+        }
         generateOutputs(inputPdfName, contents, config);
         if (config.isPaperMode()) {
             PaperProcessor.process(inputPdfName, contents, config);

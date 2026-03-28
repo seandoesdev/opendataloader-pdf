@@ -147,6 +147,8 @@ public class CLIOptions {
     private static final String PAPER_REVIEW_DIR_DESC = "Path to review queue output directory for low-confidence paper mode results";
     private static final String PAPER_CRF_MODEL_LONG_OPTION = "paper-crf-model";
     private static final String PAPER_CRF_MODEL_DESC = "Path to trained CRF model file for paper mode zone classification";
+    private static final String PAPER_ANALYZE_LONG_OPTION = "paper-analyze";
+    private static final String PAPER_ANALYZE_DESC = "Analyze PDF structure and auto-generate journal template (outputs to --paper-template-dir or current directory)";
 
     // ===== Stdout Output =====
     private static final String TO_STDOUT_LONG_OPTION = "to-stdout";
@@ -204,6 +206,7 @@ public class CLIOptions {
             new OptionDefinition(PAPER_TEMPLATE_DIR_LONG_OPTION, null, "string", null, PAPER_TEMPLATE_DIR_DESC, true),
             new OptionDefinition(PAPER_REVIEW_DIR_LONG_OPTION, null, "string", null, PAPER_REVIEW_DIR_DESC, true),
             new OptionDefinition(PAPER_CRF_MODEL_LONG_OPTION, null, "string", null, PAPER_CRF_MODEL_DESC, true),
+            new OptionDefinition(PAPER_ANALYZE_LONG_OPTION, null, "boolean", false, PAPER_ANALYZE_DESC, true),
             new OptionDefinition(TO_STDOUT_LONG_OPTION, null, "boolean", false, TO_STDOUT_DESC, true),
             new OptionDefinition(EXPORT_OPTIONS_LONG_OPTION, null, "boolean", null, null, false),
 
@@ -277,6 +280,9 @@ public class CLIOptions {
         }
         if (commandLine.hasOption(PAPER_CRF_MODEL_LONG_OPTION)) {
             config.setPaperCrfModelPath(commandLine.getOptionValue(PAPER_CRF_MODEL_LONG_OPTION));
+        }
+        if (commandLine.hasOption(PAPER_ANALYZE_LONG_OPTION)) {
+            config.setPaperAnalyze(true);
         }
         if (commandLine.hasOption(CLIOptions.READING_ORDER_LONG_OPTION)) {
             config.setReadingOrder(commandLine.getOptionValue(CLIOptions.READING_ORDER_LONG_OPTION));
