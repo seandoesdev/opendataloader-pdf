@@ -61,8 +61,52 @@ public class PaperProcessor {
             LOGGER.info("Paper mode: template extraction completed (journal=" + journalId + ")");
         }
 
-        // === Layer 2: CRF (placeholder for Sub-project 2) ===
+        // === Layer 2: CRF model ===
         PaperDocument crfResult = null;
+        if (config.getPaperCrfModelPath() != null) {
+            java.nio.file.Path crfModelPath = java.nio.file.Path.of(config.getPaperCrfModelPath());
+            if (java.nio.file.Files.exists(crfModelPath)) {
+                try {
+                    org.opendataloader.pdf.processors.paper.crf.CRFClassifier crfClassifier =
+                        org.opendataloader.pdf.processors.paper.crf.CRFClassifier.load(crfModelPath);
+                    if (crfClassifier.isModelLoaded()) {
+                        List<org.opendataloader.pdf.processors.paper.crf.CRFClassifier.Classification> crfResults =
+                            crfClassifier.classify(allZones);
+
+                        // Create a copy of zones with CRF classifications applied
+                        List<Zone> crfZones = new ArrayList<>();
+                        double totalCrfConf = 0;
+                        for (int i = 0; i < allZones.size() && i < crfResults.size(); i++) {
+                            Zone original = allZones.get(i);
+                            Zone copy = new Zone(original.getPageNumber(), original.getBounds(),
+                                original.getContents(), original.getFeatures());
+                            copy.setTextOverride(original.getTextContent());
+
+                            org.opendataloader.pdf.processors.paper.crf.CRFClassifier.Classification c = crfResults.get(i);
+                            if (c.confidence() >= 0.8) {
+                                copy.setType(c.type());
+                                copy.setConfidence(c.confidence());
+                            } else {
+                                copy.setType(original.getType());
+                                copy.setConfidence(original.getConfidence());
+                            }
+                            crfZones.add(copy);
+                            totalCrfConf += c.confidence();
+                        }
+                        double avgCrfConf = crfResults.isEmpty() ? 0 : totalCrfConf / crfResults.size();
+
+                        if (avgCrfConf >= 0.7) {
+                            crfResult = extractWithRules(crfZones, inputPdfName, totalPages);
+                            crfResult.setExtractionMode("crf");
+                            LOGGER.info("Paper mode: CRF extraction completed (avg confidence: " +
+                                String.format("%.2f", avgCrfConf) + ")");
+                        }
+                    }
+                } catch (Exception e) {
+                    LOGGER.warning("CRF classification failed, falling back: " + e.getMessage());
+                }
+            }
+        }
 
         // === Merge results ===
         PaperDocument finalDoc = ResultMerger.merge(templateResult, crfResult, ruleResult);
@@ -82,7 +126,7 @@ public class PaperProcessor {
         PaperMarkdownGenerator.write(finalDoc, inputPdfName, outputFolder);
 
         // Write to review queue if low confidence
-        ReviewQueueWriter.write(finalDoc, inputPdfName, config.getPaperReviewDir());
+        ReviewQueueWriter.write(finalDoc, allZones, inputPdfName, config.getPaperReviewDir());
 
         LOGGER.info("Paper mode: completed " + inputPdfName +
             " (title=" + (finalDoc.getTitle() != null ? "yes" : "no") +
