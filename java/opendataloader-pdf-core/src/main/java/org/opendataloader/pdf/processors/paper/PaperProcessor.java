@@ -156,7 +156,8 @@ public class PaperProcessor {
                 sb.append(zone.getTextContent()).append("\n");
             }
         }
-        return sb.toString();
+        // Strip null characters that can appear from malformed PDF font encodings
+        return sb.toString().replace("\u0000", "");
     }
 
     private static double computeAvgBodyFontSize(List<List<IObject>> contents) {

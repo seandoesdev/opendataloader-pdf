@@ -22,6 +22,9 @@ public class PaperDocument {
     private int totalPages;
     private Map<String, Double> confidence;
 
+    /** Internal index of the title element — not serialized to JSON output. */
+    private transient int titleElementIndex = -1;
+
     public PaperDocument(String sourceFile, int totalPages) {
         this.sourceFile = sourceFile;
         this.totalPages = totalPages;
@@ -57,6 +60,9 @@ public class PaperDocument {
     public void setPublication(PaperPublication publication) { this.publication = publication; }
     public void setLanguage(String language) { this.language = language; }
     public void setExtractionMode(String extractionMode) { this.extractionMode = extractionMode; }
+
+    public int getTitleElementIndex() { return titleElementIndex; }
+    public void setTitleElementIndex(int titleElementIndex) { this.titleElementIndex = titleElementIndex; }
 
     public void setConfidence(String field, double value) {
         this.confidence.put(field, value);

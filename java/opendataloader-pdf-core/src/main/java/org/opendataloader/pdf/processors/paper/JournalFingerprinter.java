@@ -12,13 +12,13 @@ public class JournalFingerprinter {
         String doi = extractDoi(firstPageText);
         if (doi != null) {
             JsonNode template = registry.findTemplate(doi);
-            if (template != null) {
+            if (template != null && template.has("journal_id")) {
                 return template.get("journal_id").asText();
             }
         }
         // 2. Try ISSN / name pattern matching
         JsonNode template = registry.findTemplateByText(firstPageText);
-        if (template != null) {
+        if (template != null && template.has("journal_id")) {
             return template.get("journal_id").asText();
         }
         return "default";

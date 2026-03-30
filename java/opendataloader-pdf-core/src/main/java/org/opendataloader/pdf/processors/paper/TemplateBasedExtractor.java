@@ -53,6 +53,14 @@ public class TemplateBasedExtractor {
 
         extractTitle(elements, bodyFontSize, template.get("title_rules"), doc);
         extractAuthors(elements, bodyFontSize, template.get("author_rules"), doc);
+
+        // Fallback: if IObject-based author extraction found nothing, try zone-based
+        // extraction using spatial coordinates (handles split-layout PDFs where IObject
+        // order doesn't match visual layout)
+        if (doc.getAuthors().isEmpty() && zones != null && !zones.isEmpty()) {
+            extractAuthorsFromZones(zones, bodyFontSize, template.get("author_rules"), doc);
+        }
+
         extractAbstract(elements, template.get("abstract_rules"), template.get("keyword_rules"), doc);
         extractKeywords(elements, template.get("keyword_rules"), doc);
         extractSections(elements, doc);
@@ -212,8 +220,10 @@ public class TemplateBasedExtractor {
 
         Element bestTitle = null;
         double bestFontSize = 0;
+        int bestTitleIdx = -1;
 
-        for (Element e : elements) {
+        for (int i = 0; i < elements.size(); i++) {
+            Element e = elements.get(i);
             if (e.page > 2) break; // Only check first 2 pages
             if (e.text.length() < 5) continue;
             if (skipLabels.contains(e.text.toLowerCase().trim())) continue;
@@ -225,11 +235,13 @@ public class TemplateBasedExtractor {
             if (e.fontSize > bestFontSize) {
                 bestFontSize = e.fontSize;
                 bestTitle = e;
+                bestTitleIdx = i;
             }
         }
 
         if (bestTitle != null) {
             doc.setTitle(bestTitle.text);
+            doc.setTitleElementIndex(bestTitleIdx);
             doc.setConfidence("title", 0.92);
             boolean hasKorean = bestTitle.text.codePoints().anyMatch(cp ->
                 (cp >= 0xAC00 && cp <= 0xD7AF) || (cp >= 0x3131 && cp <= 0x318E));
@@ -243,6 +255,11 @@ public class TemplateBasedExtractor {
 
     private static final Pattern EXCLUDE_DEFAULT = Pattern.compile(
         "(Received|Revised|Accepted|Published|Submitted|투고|심사|게재)", Pattern.CASE_INSENSITIVE);
+    /** Matches trailing affiliation block: last author marker(s) followed by affiliation text.
+     *  e.g., "정화식***** *첨단우암병원 작업치료사 **순천향대..." →  captures up to "정화식*****"
+     *  Group 1 = everything before the affiliation block (the author names). */
+    private static final Pattern AFFILIATION_BLOCK = Pattern.compile(
+        "(.*[*†‡§]+)\\s+[*†‡§]*[\\p{IsHangul}\\p{IsLatin}].*$");
     private static final Pattern ABSTRACT_LABEL = Pattern.compile(
         "^\\s*(Abstract|ABSTRACT|Purpose|Background|Objectives|초록|요약|국문\\s*초록|요\\s*약)",
         Pattern.CASE_INSENSITIVE);
@@ -257,19 +274,14 @@ public class TemplateBasedExtractor {
         String separator = rules != null && rules.has("separator")
             ? rules.get("separator").asText() : ",";
 
-        // Phase 1: Find title element index and title font size
-        int titleIdx = -1;
-        double titleFontSize = 0;
-        for (int i = 0; i < elements.size(); i++) {
-            if (elements.get(i).text.equals(doc.getTitle())) {
-                titleIdx = i;
-                titleFontSize = elements.get(i).fontSize;
-                break;
-            }
-        }
+        // Phase 1: Use title element index recorded by extractTitle
+        int titleIdx = doc.getTitleElementIndex();
+        double titleFontSize = titleIdx >= 0 && titleIdx < elements.size()
+            ? elements.get(titleIdx).fontSize : 0;
         if (titleIdx < 0) return;
 
-        // Phase 2: Scan elements after title, stop at abstract/heading/long-text
+        // Phase 2: Collect candidate author text fragments between title and abstract
+        StringBuilder authorTextBuilder = new StringBuilder();
         for (int i = titleIdx + 1; i < elements.size(); i++) {
             Element e = elements.get(i);
             if (e.page > 1) break; // Authors are on page 1
@@ -284,7 +296,9 @@ public class TemplateBasedExtractor {
             if (e.heading && e.fontSize < titleFontSize * 0.9) continue;
 
             // STOP: long text = abstract/body, not author names
-            if (e.text.length() > 150) break;
+            // Author lines with many co-authors and affiliation markers can exceed 150 chars,
+            // so use a higher threshold; sentence-pattern check below catches abstracts.
+            if (e.text.length() > 300) break;
 
             // STOP: text looks like a paragraph (multiple sentences)
             if (e.text.contains(". ") && e.text.length() > 80) break;
@@ -304,8 +318,23 @@ public class TemplateBasedExtractor {
             if (e.text.startsWith("<") || e.text.startsWith("|")) continue;
             if (e.text.matches("^\\s*(차\\s*례|목\\s*차|Table of Contents).*")) continue;
 
-            // Parse names
-            String[] parts = e.text.split(Pattern.quote(separator));
+            // Accumulate candidate fragments with separator so they can be parsed together
+            if (authorTextBuilder.length() > 0) {
+                authorTextBuilder.append(separator);
+            }
+            authorTextBuilder.append(e.text);
+        }
+
+        // Phase 3: Strip trailing affiliation block before parsing author names.
+        // Pattern: last author's marker (*****) followed by affiliation text
+        // e.g., "정화식***** *첨단우암병원 작업치료사 **순천향대학병원..."
+        // We cut at the point where a marker is followed by non-marker text (affiliation).
+        String authorText = authorTextBuilder.toString();
+        authorText = AFFILIATION_BLOCK.matcher(authorText).replaceFirst("$1");
+
+        // Phase 4: Parse all collected author text at once
+        if (!authorText.isEmpty()) {
+            String[] parts = authorText.split(Pattern.quote(separator));
             for (String part : parts) {
                 String name = cleanAuthorName(part);
                 if (name.isEmpty() || name.length() > 30) continue;
@@ -317,6 +346,128 @@ public class TemplateBasedExtractor {
 
         if (!doc.getAuthors().isEmpty()) {
             doc.setConfidence("authors", 0.90);
+        }
+    }
+
+    // =========================================================================
+    // AUTHORS FALLBACK: Zone-based extraction using spatial coordinates
+    // Handles split-layout PDFs where IObject order doesn't match visual layout
+    // =========================================================================
+
+    /** Pattern matching abstract labels including those preceded by brackets like 〈국문 요약〉 */
+    private static final Pattern ABSTRACT_LABEL_LOOSE = Pattern.compile(
+        "(Abstract|ABSTRACT|Purpose|Background|Objectives|초록|요약|국문\\s*초록|국문\\s*요약)",
+        Pattern.CASE_INSENSITIVE);
+
+    /** Pattern matching common non-author structural elements */
+    private static final Pattern STRUCTURAL_LABEL = Pattern.compile(
+        "(차\\s*례|목\\s*차|Table of Contents|주제어|Keywords|Key\\s*words|참고\\s*문헌|References)",
+        Pattern.CASE_INSENSITIVE);
+
+    private static void extractAuthorsFromZones(List<Zone> zones, double bodyFontSize,
+                                                 JsonNode rules, PaperDocument doc) {
+        if (doc.getTitle() == null) return;
+
+        String separator = rules != null && rules.has("separator")
+            ? rules.get("separator").asText() : ",";
+
+        // Optional spatial hint: only consider zones in the left portion of the page
+        double xMaxRatio = rules != null && rules.has("x_max_ratio")
+            ? rules.get("x_max_ratio").asDouble(1.0) : 1.0;
+
+        List<Pattern> excludePatterns = getPatternList(rules, "exclude_patterns");
+        excludePatterns.add(EXCLUDE_DEFAULT);
+
+        // Find title zone to establish vertical reference
+        Zone titleZone = null;
+        for (Zone z : zones) {
+            if (z.getPageNumber() <= 1 && z.getTextContent().trim().equals(doc.getTitle())) {
+                titleZone = z;
+                break;
+            }
+        }
+        if (titleZone == null) return;
+
+        double titleBottomY = titleZone.getBounds().getBottomY();
+
+        // Find max rightX among all page-1 zones to estimate page width
+        double pageWidth = 0;
+        for (Zone z : zones) {
+            if (z.getPageNumber() <= 1 && z.getBounds().getRightX() > pageWidth) {
+                pageWidth = z.getBounds().getRightX();
+            }
+        }
+
+        // Sort page-1 zones by y-coordinate (top to bottom) for correct ordering
+        List<Zone> page1Zones = new ArrayList<>();
+        for (Zone z : zones) {
+            if (z.getPageNumber() <= 1) page1Zones.add(z);
+        }
+        page1Zones.sort((a, b) -> Double.compare(b.getBounds().getTopY(), a.getBounds().getTopY()));
+
+        // Collect candidate author zones: below title, above abstract, short text
+        StringBuilder authorTextBuilder = new StringBuilder();
+        for (Zone z : page1Zones) {
+            String text = z.getTextContent().trim();
+            if (text.isEmpty()) continue;
+
+            // Spatial filter: zone must be below the title
+            if (z.getBounds().getTopY() >= titleBottomY) continue;
+
+            // Spatial filter: x_max_ratio — only consider left portion of page
+            if (xMaxRatio < 1.0 && pageWidth > 0) {
+                if (z.getBounds().getLeftX() > pageWidth * xMaxRatio) continue;
+            }
+
+            // STOP: hit abstract label (loose match handles 〈국문 요약〉 etc.)
+            if (ABSTRACT_LABEL_LOOSE.matcher(text).find()) break;
+
+            // SKIP: structural labels (차례, 키워드, 참고문헌 etc.)
+            if (STRUCTURAL_LABEL.matcher(text).find()) continue;
+
+            // SKIP: long text (body paragraphs)
+            if (text.length() > 150) continue;
+            if (text.contains(". ") && text.length() > 80) continue;
+
+            // SKIP: excluded patterns (Received, Revised etc.)
+            boolean excluded = false;
+            for (Pattern ep : excludePatterns) {
+                if (ep.matcher(text).find()) { excluded = true; break; }
+            }
+            if (excluded) continue;
+
+            // SKIP: very small font (footnotes)
+            if (z.getFeatures().getMaxFontSize() > 0
+                && z.getFeatures().getMaxFontSize() < bodyFontSize * 0.6) continue;
+
+            // SKIP: non-name patterns
+            if (text.startsWith("©") || text.startsWith("http")) continue;
+            if (text.startsWith("<") || text.startsWith("|")) continue;
+            if (text.matches("^[-–—\\d\\s]+$")) continue; // page numbers like "- 1 -"
+
+            if (authorTextBuilder.length() > 0) {
+                authorTextBuilder.append(separator);
+            }
+            authorTextBuilder.append(text);
+        }
+
+        // Strip trailing affiliation block and parse
+        String authorText = authorTextBuilder.toString();
+        authorText = AFFILIATION_BLOCK.matcher(authorText).replaceFirst("$1");
+
+        if (!authorText.isEmpty()) {
+            String[] parts = authorText.split(Pattern.quote(separator));
+            for (String part : parts) {
+                String name = cleanAuthorName(part);
+                if (name.isEmpty() || name.length() > 30) continue;
+                if (!PaperValidator.isValidAuthor(name)) continue;
+                doc.getAuthors().add(new PaperAuthor(name, null, null,
+                    part.contains("*") || part.contains("†")));
+            }
+        }
+
+        if (!doc.getAuthors().isEmpty()) {
+            doc.setConfidence("authors", 0.85); // Slightly lower confidence for fallback
         }
     }
 
@@ -531,12 +682,14 @@ public class TemplateBasedExtractor {
         }
         if (refStartIdx < 0) return;
 
-        // Collect all text after heading
+        // Collect all elements after heading and their individual texts
         StringBuilder allRefText = new StringBuilder();
+        List<String> elementTexts = new ArrayList<>();
         for (int i = refStartIdx; i < elements.size(); i++) {
             Element e = elements.get(i);
             if (allRefText.length() > 0) allRefText.append("\n");
             allRefText.append(e.text);
+            elementTexts.add(e.text);
         }
         if (allRefText.length() == 0) return;
 
@@ -545,8 +698,24 @@ public class TemplateBasedExtractor {
         String[] entries;
         if ("dot_number".equals(entryPattern)) {
             entries = Pattern.compile("(?m)(?=^\\s*\\d+\\.\\s)").split(refStr);
+        } else if ("paren_number".equals(entryPattern)) {
+            entries = Pattern.compile("(?=\\(\\d+\\)\\s)").split(refStr);
+        } else if ("apa".equals(entryPattern)) {
+            entries = splitByHeuristic(refStr);
+        } else if ("auto".equals(entryPattern)) {
+            entries = autoSplitReferences(refStr);
         } else {
             entries = Pattern.compile("(?=\\[\\d+\\])").split(refStr);
+        }
+
+        // Fallback: if text-based split yields too few results, try element-based split.
+        // In hybrid/docling mode, each element may already represent an individual reference
+        // because docling segments text at paragraph boundaries.
+        if (entries.length <= 2 && elementTexts.size() > 3) {
+            String[] elementEntries = splitByElements(elementTexts);
+            if (elementEntries.length > entries.length) {
+                entries = elementEntries;
+            }
         }
 
         int refId = 0;
@@ -571,6 +740,154 @@ public class TemplateBasedExtractor {
         if (!doc.getReferences().isEmpty()) {
             doc.setConfidence("references", 0.88);
         }
+    }
+
+    /**
+     * Element-based reference splitting for hybrid/docling mode.
+     * Each element from the IObject tree may already represent an individual reference.
+     * Merges consecutive short elements that likely belong to the same entry.
+     */
+    private static String[] splitByElements(List<String> elementTexts) {
+        List<String> entries = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+
+        for (String text : elementTexts) {
+            text = text.trim();
+            if (text.isEmpty()) continue;
+
+            if (current.length() == 0) {
+                current.append(text);
+                continue;
+            }
+
+            // Check if this element starts a new reference
+            boolean isNewEntry = false;
+
+            // Signal: element contains a year pattern (likely a complete or starting reference)
+            boolean hasYear = YEAR_PATTERN.matcher(text).find();
+            // Signal: starts with author-like pattern
+            boolean startsWithAuthor = HEURISTIC_LATIN_AUTHOR_START.matcher(text).find()
+                || HEURISTIC_KOREAN_AUTHOR_START.matcher(text).find();
+            // Signal: starts with number
+            boolean startsWithNumber = HEURISTIC_NUMBER_START.matcher(text).find();
+            // Signal: previous entry ends with period (complete)
+            boolean prevComplete = current.toString().trim().endsWith(".");
+
+            if (startsWithNumber) {
+                isNewEntry = true;
+            } else if (prevComplete && (startsWithAuthor || hasYear)) {
+                isNewEntry = true;
+            } else if (prevComplete && text.length() > 40) {
+                // Long element after a complete entry is likely a new reference
+                isNewEntry = true;
+            }
+
+            if (isNewEntry) {
+                entries.add(current.toString());
+                current = new StringBuilder(text);
+            } else {
+                current.append(" ").append(text);
+            }
+        }
+        if (current.length() > 0) {
+            entries.add(current.toString());
+        }
+
+        return entries.toArray(new String[0]);
+    }
+
+    /**
+     * Auto-detect the reference entry pattern and split accordingly.
+     * Tries numbered patterns first; falls back to multi-signal heuristic.
+     */
+    private static String[] autoSplitReferences(String refStr) {
+        // Try [1], [2] pattern
+        String[] result = Pattern.compile("(?=\\[\\d+\\])").split(refStr);
+        if (result.length > 2) return result;
+
+        // Try 1. 2. pattern
+        result = Pattern.compile("(?m)(?=^\\s*\\d+\\.\\s)").split(refStr);
+        if (result.length > 2) return result;
+
+        // Try (1) (2) pattern
+        result = Pattern.compile("(?=\\(\\d+\\)\\s)").split(refStr);
+        if (result.length > 2) return result;
+
+        // Fallback: multi-signal heuristic (handles APA and non-numbered styles)
+        return splitByHeuristic(refStr);
+    }
+
+    // Patterns for heuristic boundary scoring
+    private static final Pattern HEURISTIC_DOI_END = Pattern.compile("10\\.\\d{4,9}/\\S+$");
+    private static final Pattern HEURISTIC_YEAR_END = Pattern.compile("\\((?:19|20)\\d{2}[a-z]?\\)\\.?\\s*$");
+    private static final Pattern HEURISTIC_LATIN_AUTHOR_START = Pattern.compile("^[A-Z][a-z]+,\\s");
+    private static final Pattern HEURISTIC_KOREAN_AUTHOR_START = Pattern.compile("^[\\p{IsHangul}]{2,}[,(\\s]");
+    private static final Pattern HEURISTIC_NUMBER_START = Pattern.compile(
+        "^\\s*(?:\\[\\d+\\]|\\d+[.)]+\\s|\\(\\d+\\)\\s)");
+
+    /**
+     * Split reference text using multiple signals at each line boundary.
+     * Scores each boundary and splits where score >= threshold.
+     */
+    private static String[] splitByHeuristic(String refStr) {
+        String[] lines = refStr.split("\n");
+        List<String> entries = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
+            if (line.isEmpty()) continue;
+
+            if (current.length() == 0) {
+                current.append(line);
+                continue;
+            }
+
+            int score = scoreBoundary(lines, i);
+
+            if (score >= 3) {
+                entries.add(current.toString());
+                current = new StringBuilder(line);
+            } else {
+                current.append(" ").append(line);
+            }
+        }
+        if (current.length() > 0) {
+            entries.add(current.toString());
+        }
+
+        return entries.toArray(new String[0]);
+    }
+
+    /**
+     * Score a line boundary to determine if a new reference entry starts here.
+     * Positive score = likely new entry; negative = continuation of previous.
+     */
+    private static int scoreBoundary(String[] lines, int currentIdx) {
+        String prevLine = lines[currentIdx - 1].trim();
+        String currLine = lines[currentIdx].trim();
+        if (currLine.isEmpty()) return 0;
+        int score = 0;
+
+        // S1: Previous line ends with completion signal (period after page/year/DOI)
+        if (prevLine.endsWith(".") || prevLine.endsWith(".)")) score += 3;
+        if (HEURISTIC_DOI_END.matcher(prevLine).find()) score += 3;
+
+        // S2: Current line starts with author name pattern
+        if (HEURISTIC_LATIN_AUTHOR_START.matcher(currLine).find()) score += 3;
+        if (HEURISTIC_KOREAN_AUTHOR_START.matcher(currLine).find()) score += 3;
+
+        // S3: Current line starts with number pattern (definitive)
+        if (HEURISTIC_NUMBER_START.matcher(currLine).find()) score += 5;
+
+        // S4: Previous line is incomplete (no period, ends with lowercase/comma/hyphen)
+        if (!prevLine.endsWith(".") && !prevLine.endsWith(")")
+            && prevLine.matches(".*[a-z,\\-]$")) score -= 3;
+
+        // S5: Previous line contains year pattern near end (year often closes an entry)
+        if (HEURISTIC_YEAR_END.matcher(prevLine).find()) score += 2;
+
+        return score;
     }
 
     private static void parseReferenceFields(String text, PaperReference ref) {
